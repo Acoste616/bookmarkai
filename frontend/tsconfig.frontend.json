@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    // Output directory is managed by Vite, so "noEmit" or an equivalent is fine.
+    // "outDir": "dist/frontend" // Vite handles output, this is more for tsc direct builds
+  },
+  "include": ["src", "vite.config.ts", "tailwind.config.js", "postcss.config.js"],
+  "references": [{ "path": "../tsconfig.json" }] // Optional: if it contains base settings to extend
+} 

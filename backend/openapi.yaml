@@ -1,0 +1,574 @@
+openapi: 3.0.0
+info:
+  title: BookmarkBrain API
+  version: 1.0.0
+  description: |
+    API for managing bookmarks, categories, tags and AI features.
+    
+    Features:
+    - CRUD operations for bookmarks, categories, and tags
+    - AI-powered bookmark analysis and search
+    - Bulk import/export functionality
+    - Metadata extraction from bookmarked URLs
+
+servers:
+  - url: http://localhost:3001
+    description: Development server
+  - url: https://api.bookmarkbrain.com
+    description: Production server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          example: "Invalid input data"
+        details:
+          type: object
+          additionalProperties: true
+
+    Bookmark:
+      type: object
+      required:
+        - url
+        - title
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        url:
+          type: string
+          format: uri
+          example: "https://example.com"
+        title:
+          type: string
+          example: "Example Website"
+        description:
+          type: string
+          example: "A sample website for demonstration"
+        categoryId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174001"
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["web", "example", "demo"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          properties:
+            favicon:
+              type: string
+              example: "https://example.com/favicon.ico"
+            screenshot:
+              type: string
+              example: "https://example.com/screenshot.png"
+            summary:
+              type: string
+              example: "A brief summary of the webpage content"
+            keywords:
+              type: array
+              items:
+                type: string
+              example: ["web", "development", "tutorial"]
+
+    Category:
+      type: object
+      required:
+        - name
+        - color
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174001"
+        name:
+          type: string
+          example: "Web Development"
+        color:
+          type: string
+          example: "#FF5733"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Tag:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174002"
+        name:
+          type: string
+          example: "javascript"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AIQuery:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          example: "Find all bookmarks about React development"
+        context:
+          type: object
+          properties:
+            bookmarks:
+              type: array
+              items:
+                $ref: '#/components/schemas/Bookmark'
+            categories:
+              type: array
+              items:
+                $ref: '#/components/schemas/Category'
+            tags:
+              type: array
+              items:
+                $ref: '#/components/schemas/Tag'
+
+    ImportData:
+      type: object
+      properties:
+        bookmarks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Bookmark'
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+
+paths:
+  /api/bookmarks:
+    get:
+      summary: Get all bookmarks
+      description: Retrieve a list of all bookmarks with optional filtering
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: categoryId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter bookmarks by category ID
+        - name: tag
+          in: query
+          schema:
+            type: string
+          description: Filter bookmarks by tag
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search in title and description
+      responses:
+        '200':
+          description: List of bookmarks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Bookmark'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Create a new bookmark
+      description: Create a new bookmark with optional metadata extraction
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Bookmark'
+      responses:
+        '201':
+          description: Bookmark created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bookmark'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/bookmarks/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get a bookmark by ID
+      description: Retrieve detailed information about a specific bookmark
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Bookmark details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bookmark'
+        '404':
+          description: Bookmark not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update a bookmark
+      description: Update an existing bookmark's information
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Bookmark'
+      responses:
+        '200':
+          description: Bookmark updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bookmark'
+        '404':
+          description: Bookmark not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete a bookmark
+      description: Remove a bookmark from the system
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Bookmark deleted successfully
+        '404':
+          description: Bookmark not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/categories:
+    get:
+      summary: Get all categories
+      description: Retrieve a list of all bookmark categories
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+    post:
+      summary: Create a new category
+      description: Create a new category for organizing bookmarks
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+      responses:
+        '201':
+          description: Category created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+
+  /api/categories/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get a category by ID
+      description: Retrieve detailed information about a specific category
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Category details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+    put:
+      summary: Update a category
+      description: Update an existing category's information
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+      responses:
+        '200':
+          description: Category updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+    delete:
+      summary: Delete a category
+      description: Remove a category from the system
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Category deleted successfully
+
+  /api/tags:
+    get:
+      summary: Get all tags
+      description: Retrieve a list of all available tags
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of tags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
+    post:
+      summary: Create a new tag
+      description: Create a new tag for categorizing bookmarks
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Tag'
+      responses:
+        '201':
+          description: Tag created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+
+  /api/tags/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get a tag by ID
+      description: Retrieve detailed information about a specific tag
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Tag details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+    put:
+      summary: Update a tag
+      description: Update an existing tag's information
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Tag'
+      responses:
+        '200':
+          description: Tag updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+    delete:
+      summary: Delete a tag
+      description: Remove a tag from the system
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Tag deleted successfully
+
+  /api/ai/query:
+    post:
+      summary: Query AI with context
+      description: |
+        Send a query to the AI system with relevant context for analysis.
+        
+        The response is cached for 24 hours to improve performance and reduce API calls.
+        If the same query is made with the same context within the cache period,
+        the cached response will be returned with a 'cached: true' flag in the metadata.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIQuery'
+      responses:
+        '200':
+          description: AI response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+                    example: "Based on your bookmarks, here are the top React development resources..."
+                  metadata:
+                    type: object
+                    properties:
+                      confidence:
+                        type: number
+                        example: 0.95
+                      processingTime:
+                        type: number
+                        example: 1.2
+                      cached:
+                        type: boolean
+                        description: Indicates if the response was served from cache
+                        example: false
+        '400':
+          description: Invalid query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/import:
+    post:
+      summary: Import bookmarks, categories and tags
+      description: Bulk import of bookmarks, categories, and tags from external sources
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportData'
+      responses:
+        '200':
+          description: Import successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Successfully imported data"
+                  imported:
+                    type: object
+                    properties:
+                      bookmarks:
+                        type: number
+                        example: 50
+                      categories:
+                        type: number
+                        example: 5
+                      tags:
+                        type: number
+                        example: 20
+        '400':
+          description: Invalid import data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error' 
