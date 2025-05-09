@@ -25,7 +25,7 @@ export default defineConfig({
   root: path.resolve(__dirname, "frontend"),
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "frontend/src"),
+      "@": path.resolve(__dirname, "./src"),
       // Define @db and @shared if you create 'db' and 'shared' folders at the root
       // "@db": path.resolve(__dirname, "db"),
       // "@shared": path.resolve(__dirname, "shared"),
@@ -52,7 +52,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173, // Keep the port from the client's original vite config
+    port: 3000,
     proxy: {
       "/api": {
         target: "http://localhost:5001", // Proxy to backend

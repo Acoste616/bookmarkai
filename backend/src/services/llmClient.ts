@@ -81,210 +81,71 @@ const calculateBackoffDelay = (retryCount: number): number => {
 };
 
 export class LLMClient {
-  private client: AxiosInstance;
-  private requestCount: number = 0;
-  private lastRequestTime: number = 0;
+  private baseUrl: string;
 
-  constructor(baseURL: string, config?: AxiosRequestConfig) {
-    this.client = axios.create({
-      baseURL,
-      timeout: RETRY_CONFIG.timeout,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      ...config
-    });
-
-    // Add request interceptor for rate limiting
-    this.client.interceptors.request.use((config) => {
-      const now = Date.now();
-      const timeSinceLastRequest = now - this.lastRequestTime;
-      
-      // Ensure minimum 100ms between requests
-      if (timeSinceLastRequest < 100) {
-        return new Promise(resolve => {
-          setTimeout(() => resolve(config), 100 - timeSinceLastRequest);
-        });
-      }
-      
-      this.lastRequestTime = now;
-      this.requestCount++;
-      return config;
-    });
+  constructor(baseUrl: string) {
+    this.baseUrl = baseUrl;
   }
 
-  private handleError(error: unknown): never {
-    if (axios.isAxiosError(error)) {
-      const axiosError = error as AxiosError;
-      
-      if (axiosError.code === 'ECONNABORTED') {
-        throw new LLMError(
-          ERROR_MESSAGES[ERROR_CODES.TIMEOUT],
-          ERROR_CODES.TIMEOUT,
-          axiosError,
-          { requestCount: this.requestCount }
-        );
-      }
-
-      if (axiosError.response) {
-        const status = axiosError.response.status;
-        
-        if (status === 429) {
-          throw new LLMError(
-            ERROR_MESSAGES[ERROR_CODES.RATE_LIMIT],
-            ERROR_CODES.RATE_LIMIT,
-            axiosError,
-            { 
-              requestCount: this.requestCount,
-              retryAfter: axiosError.response.headers['retry-after']
-            }
-          );
-        }
-
-        if (status >= 500) {
-          throw new LLMError(
-            ERROR_MESSAGES[ERROR_CODES.MODEL_ERROR],
-            ERROR_CODES.MODEL_ERROR,
-            axiosError,
-            { status, requestCount: this.requestCount }
-          );
-        }
-      }
-
-      if (axiosError.code === 'ECONNREFUSED' || axiosError.code === 'ENOTFOUND') {
-        throw new LLMError(
-          ERROR_MESSAGES[ERROR_CODES.CONNECTION],
-          ERROR_CODES.CONNECTION,
-          axiosError,
-          { requestCount: this.requestCount }
-        );
-      }
-    }
-
-    throw new LLMError(
-      ERROR_MESSAGES[ERROR_CODES.UNKNOWN],
-      ERROR_CODES.UNKNOWN,
-      error instanceof Error ? error : undefined,
-      { requestCount: this.requestCount }
-    );
-  }
-
-  private async retryRequest<T>(
-    requestFn: () => Promise<T>,
-    retryCount = 0
-  ): Promise<T> {
+  async analyzeText(text: string): Promise<string> {
     try {
-      return await requestFn();
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an AI assistant that analyzes text and provides insights.'
+            },
+            {
+              role: 'user',
+              content: text
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 500
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`LLM API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.choices[0].message.content;
     } catch (error) {
-      if (retryCount >= RETRY_CONFIG.maxRetries) {
-        this.handleError(error);
-      }
-
-      // Check if error is retryable
-      if (axios.isAxiosError(error) && error.response) {
-        const status = error.response.status;
-        if (!RETRY_CONFIG.retryableStatusCodes.includes(status as typeof RETRY_CONFIG.retryableStatusCodes[number])) {
-          this.handleError(error);
-        }
-      }
-
-      // Wait with exponential backoff
-      await new Promise(resolve => 
-        setTimeout(resolve, calculateBackoffDelay(retryCount))
-      );
-
-      // Retry the request
-      return this.retryRequest(requestFn, retryCount + 1);
+      const llmError = new Error(error instanceof Error ? error.message : 'Unknown LLM error');
+      llmError.name = 'LLMError';
+      throw llmError;
     }
   }
 
-  async query(prompt: string, context?: any, options?: Partial<LLMRequest>): Promise<LLMResponse> {
-    // Check cache first
-    const cachedResponse = cacheService.get(prompt, context);
-    if (cachedResponse) {
-      return {
-        ...cachedResponse,
-        metadata: {
-          ...cachedResponse.metadata,
-          cached: true
-        }
-      };
+  async generateEmbedding(text: string): Promise<number[]> {
+    try {
+      const response = await fetch(`${this.baseUrl}/embeddings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          input: text,
+          model: 'text-embedding-ada-002'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`LLM API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.data[0].embedding;
+    } catch (error) {
+      const llmError = new Error(error instanceof Error ? error.message : 'Unknown LLM error');
+      llmError.name = 'LLMError';
+      throw llmError;
     }
-
-    const requestFn = async () => {
-      const requestData: LLMRequest = {
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a helpful AI assistant for the BookmarkBrain application.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        context,
-        ...options
-      };
-
-      try {
-        // Validate request data
-        LLMRequestSchema.parse(requestData);
-      } catch (error) {
-        throw new LLMError(
-          ERROR_MESSAGES[ERROR_CODES.VALIDATION_ERROR],
-          ERROR_CODES.VALIDATION_ERROR,
-          error instanceof Error ? error : undefined
-        );
-      }
-
-      const response = await this.client.post('/v1/chat/completions', requestData);
-
-      try {
-        const validatedResponse = LLMResponseSchema.parse(response.data);
-        
-        // Cache the response
-        cacheService.set(prompt, validatedResponse, context);
-        
-        return validatedResponse;
-      } catch (error) {
-        throw new LLMError(
-          ERROR_MESSAGES[ERROR_CODES.INVALID_RESPONSE],
-          ERROR_CODES.INVALID_RESPONSE,
-          error instanceof Error ? error : undefined
-        );
-      }
-    };
-
-    return this.retryRequest(requestFn);
-  }
-
-  async analyzeBookmark(bookmark: any): Promise<LLMResponse> {
-    const prompt = `Analyze the following bookmark and provide insights:
-      Title: ${bookmark.title}
-      URL: ${bookmark.url}
-      Description: ${bookmark.description || 'No description provided'}
-      Tags: ${bookmark.tags?.join(', ') || 'No tags'}
-    `;
-
-    return this.query(prompt, { bookmark }, { temperature: 0.7 });
-  }
-
-  async searchBookmarks(query: string, bookmarks: any[]): Promise<LLMResponse> {
-    const prompt = `Search through the following bookmarks for: "${query}"
-      Consider relevance, content, and metadata.
-      Return the most relevant matches with explanations.`;
-
-    return this.query(prompt, { bookmarks }, { temperature: 0.3 });
-  }
-
-  async generateTags(bookmark: any): Promise<LLMResponse> {
-    const prompt = `Generate relevant tags for the following bookmark:
-      Title: ${bookmark.title}
-      URL: ${bookmark.url}
-      Description: ${bookmark.description || 'No description provided'}
-      Return a list of tags that best describe the content.`;
-
-    return this.query(prompt, { bookmark }, { temperature: 0.5 });
   }
 } 

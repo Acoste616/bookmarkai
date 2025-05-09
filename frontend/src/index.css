@@ -152,4 +152,68 @@
 
 .fade-in {
   animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 195, 255, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 195, 255, 0.5);
+}
+
+/* Neon effects */
+.neon-text {
+  text-shadow: 0 0 5px rgba(0, 195, 255, 0.5),
+               0 0 10px rgba(0, 195, 255, 0.3),
+               0 0 15px rgba(0, 195, 255, 0.2);
+}
+
+.neon-border {
+  box-shadow: 0 0 5px rgba(0, 195, 255, 0.5),
+              0 0 10px rgba(0, 195, 255, 0.3),
+              0 0 15px rgba(0, 195, 255, 0.2);
+}
+
+/* Loading spinner */
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(0, 195, 255, 0.3);
+  border-top-color: #00c3ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-in-out;
 } 

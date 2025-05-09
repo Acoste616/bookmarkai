@@ -4,18 +4,73 @@
   "description": "AI-Enhanced Bookmark Manager",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2563eb",
+  "background_color": "#080825",
+  "theme_color": "#00c3ff",
+  "orientation": "any",
   "icons": [
     {
       "src": "/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "List View",
+      "short_name": "List",
+      "description": "View bookmarks as a list",
+      "url": "/list",
+      "icons": [{ "src": "/shortcuts/list-icon.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Graph View",
+      "short_name": "Graph",
+      "description": "View bookmarks as a graph",
+      "url": "/",
+      "icons": [{ "src": "/shortcuts/graph-icon.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Add Bookmark",
+      "short_name": "Add",
+      "description": "Add a new bookmark",
+      "url": "/?action=add",
+      "icons": [{ "src": "/shortcuts/add-icon.png", "sizes": "96x96" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/graph-view.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "Graph View of Bookmarks"
+    },
+    {
+      "src": "/screenshots/list-view.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "List View of Bookmarks"
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "categories": ["productivity", "tools"],
+  "iarc_rating_id": "",
+  "share_target": {
+    "action": "/share-target",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
 } 

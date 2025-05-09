@@ -1,48 +1,25 @@
 {
+  "name": "bookmarkbrain",
+  "version": "0.1.0",
+  "private": true,
   "dependencies": {
-    "@prisma/client": "^6.7.0",
-    "@storybook/addon-a11y": "^8.6.12",
-    "@storybook/addon-viewport": "^8.6.12",
-    "@tanstack/react-query": "^5.0.0",
-    "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.1",
-    "@types/swagger-jsdoc": "^6.0.4",
-    "@types/swagger-ui-express": "^4.1.8",
-    "aframe": "^1.7.1",
-    "aframe-extras": "^7.5.4",
-    "autoprefixer": "^10.4.17",
-    "cors": "^2.8.5",
-    "express": "^5.1.0",
-    "lru-cache": "^11.1.0",
-    "postcss": "^8.4.35",
-    "react-force-graph": "^1.47.6",
-    "react-force-graph-2d": "^1.27.1",
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1",
-    "tailwindcss": "^3.4.1",
-    "wouter": "^2.12.1",
-    "yaml": "^2.7.1",
-    "zustand": "^5.0.4"
-  },
-  "scripts": {
-    "dev": "concurrently \"npm:dev:frontend\" \"npm:dev:backend\"",
-    "dev:frontend": "cd frontend && vite",
-    "build:frontend": "cd frontend && vite build",
-    "preview:frontend": "cd frontend && vite preview",
-    "dev:backend": "cd backend && ts-node-dev --respawn --transpile-only src/server.ts",
-    "build:backend": "tsc -p backend/tsconfig.backend.json",
-    "preview": "npm run preview:frontend"
-  },
-  "devDependencies": {
-    "@types/react": "^18.2.66",
-    "@types/react-dom": "^18.2.22",
-    "@vitejs/plugin-react": "^4.2.1",
-    "concurrently": "^8.2.2",
-    "prisma": "^6.7.0",
+    "@types/node": "^20.11.24",
+    "@types/react": "^18.2.61",
+    "@types/react-dom": "^18.2.19",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "ts-node-dev": "^2.0.0",
-    "typescript": "^5.4.5",
-    "vite": "^5.2.0"
+    "react-force-graph-2d": "^1.25.3",
+    "wouter": "^2.12.1",
+    "tailwindcss": "^3.4.1",
+    "postcss": "^8.4.35",
+    "autoprefixer": "^10.4.17",
+    "typescript": "^5.3.3",
+    "vite": "^5.1.4",
+    "@vitejs/plugin-react": "^4.2.1"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   }
 }
